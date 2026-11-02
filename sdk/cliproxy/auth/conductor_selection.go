@@ -672,7 +672,11 @@ func selectionArgForSelector(selector Selector, routeModel string) string {
 func selectorContextForAvailableAuths(ctx context.Context, selector Selector, routeModel string) context.Context {
 	ctx = withWeightedSelectorStateModel(ctx, selector, routeModel)
 	if !isBuiltInSelector(selector) {
-		if _, sessionAffinity := selector.(*SessionAffinitySelector); !sessionAffinity {
+		switch selector.(type) {
+		case *SessionAffinitySelector, *SoonestResetSelector:
+			// Candidates were already filtered against each credential's upstream
+			// model; rechecking with the route alias would miss model cooldowns.
+		default:
 			return ctx
 		}
 	}
